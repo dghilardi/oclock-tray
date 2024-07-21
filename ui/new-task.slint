@@ -1,0 +1,20 @@
+import { Button, VerticalBox, LineEdit } from "std-widgets.slint";
+
+export component NewTaskDialog inherits Window {
+    callback create-new-task(string);
+    VerticalBox {
+        Text {
+            text: "Insert a name for the new task";
+        }
+
+        taskName := LineEdit {
+        }
+
+        Button {
+            text: "Save";
+            clicked => {
+                root.create-new-task(taskName.text);
+            }
+        }
+    }
+}

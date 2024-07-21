@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+slint::include_modules!();
 
 use crate::client::oclock::{client::OClockClient, dto::state::ExportedState};
 
@@ -31,11 +31,27 @@ impl ksni::Tray for OClockTray {
     }
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
         use ksni::menu::*;
+        let client = self.client.clone();
         vec![
             StandardItem {
                 label: "New Task".into(),
                 icon_name: "list-add".into(),
-                activate: Box::new(|_| std::process::exit(0)),
+                activate: Box::new(move |t: &mut OClockTray| {
+                    let dialog = NewTaskDialog::new().expect("Failed to create new task dialog");
+                    let weak_dialog = dialog.as_weak();
+                    let client = client.clone();
+                    dialog.on_create_new_task(move |task_name| {
+                        match client.new_task(task_name.as_str().to_string()) {
+                            Ok(_) => log::info!("Task created successfully"),
+                            Err(e) => log::error!("Failed to create task: {}", e),
+                        };
+                        weak_dialog
+                            .unwrap()
+                            .hide()
+                            .expect("Failed to hide new task dialog");
+                    });
+                    dialog.run().expect("Failed to run new task dialog");
+                }),
                 ..Default::default()
             }
             .into(),

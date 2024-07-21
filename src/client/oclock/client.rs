@@ -1,5 +1,6 @@
 use super::dto::state::ExportedState;
 
+#[derive(Clone)]
 pub struct OClockClient {}
 
 impl OClockClient {
@@ -12,6 +13,14 @@ impl OClockClient {
             oclock::dto::command::OClockClientCommand,
             ExportedState,
         >(oclock::dto::command::OClockClientCommand::JsonState)?;
+        Ok(result)
+    }
+
+    pub fn new_task(&self, name: String) -> anyhow::Result<ExportedState> {
+        let result = oclock::client::handler::invoke_server::<
+            oclock::dto::command::OClockClientCommand,
+            ExportedState,
+        >(oclock::dto::command::OClockClientCommand::JsonPushTask { name })?;
         Ok(result)
     }
 
