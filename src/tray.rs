@@ -20,7 +20,12 @@ impl OClockTray {
 
 impl ksni::Tray for OClockTray {
     fn icon_name(&self) -> String {
-        "help-about".into()
+        if self.state.current_task.is_some() {
+            "view-pim-tasks"
+        } else {
+            "view-pim-tasks-pending"
+        }
+        .into()
     }
     fn title(&self) -> String {
         if let Some(current) = self.state.current_task.as_ref() {
