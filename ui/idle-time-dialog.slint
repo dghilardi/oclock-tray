@@ -1,0 +1,27 @@
+import { Button, VerticalBox, ComboBox, CheckBox } from "std-widgets.slint";
+
+export component IdleTimeDialog inherits Window {
+    in property<string> ts-start;
+    in property<[string]> available-tasks;
+    callback retro-switch-task(int, string, bool);
+    VerticalBox {
+        Text {
+            text: "You have been afk since \{root.ts-start} have you switched task?";
+        }
+
+        taskSelector := ComboBox {
+            model: available-tasks;
+        }
+
+        restoreCurrent := CheckBox {
+            text: "Return to current task";
+        }
+
+        Button {
+            text: "Save";
+            clicked => {
+                root.retro-switch-task(taskSelector.current-index, root.ts-start, restoreCurrent.checked);
+            }
+        }
+    }
+}

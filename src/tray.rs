@@ -1,4 +1,4 @@
-slint::include_modules!();
+use slint::ComponentHandle;
 
 use crate::client::oclock::{client::OClockClient, dto::state::ExportedState};
 
@@ -46,7 +46,8 @@ impl ksni::Tray for OClockTray {
                 label: "New Task".into(),
                 icon_name: "list-add".into(),
                 activate: Box::new(move |t: &mut OClockTray| {
-                    let dialog = NewTaskDialog::new().expect("Failed to create new task dialog");
+                    let dialog = crate::slintui::newtask::NewTaskDialog::new()
+                        .expect("Failed to create new task dialog");
                     let weak_dialog = dialog.as_weak();
                     let client = client.clone();
                     dialog.on_create_new_task(move |task_name| {

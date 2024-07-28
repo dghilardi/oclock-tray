@@ -1,3 +1,5 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use futures::SinkExt;
 use nng::{
     options::{protocol::pubsub::Subscribe, Options},
@@ -37,6 +39,30 @@ impl OClockClient {
                 oclock::dto::command::OClockClientCommand,
                 ExportedState,
             >(oclock::dto::command::OClockClientCommand::JsonSwitchTask { task_id })?;
+        Ok(result)
+    }
+
+    pub fn retro_switch_task(
+        &self,
+        task_id: u64,
+        timestamp: SystemTime,
+        keep_previous_task: bool,
+    ) -> anyhow::Result<ExportedState> {
+        let timestamp = timestamp
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_secs();
+
+        let result = oclock::client::handler::invoke_server::<
+            oclock::dto::command::OClockClientCommand,
+            ExportedState,
+        >(
+            oclock::dto::command::OClockClientCommand::JsonRetroSwitchTask {
+                task_id,
+                timestamp,
+                keep_previous_task,
+            },
+        )?;
         Ok(result)
     }
 
