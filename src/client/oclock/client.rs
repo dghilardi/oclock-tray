@@ -1,3 +1,10 @@
+use futures::SinkExt;
+use nng::{
+    options::{protocol::pubsub::Subscribe, Options},
+    Socket,
+};
+use oclock::core::constants::SERVER_SUB_URL;
+
 use super::dto::state::ExportedState;
 
 #[derive(Clone)]
@@ -31,5 +38,30 @@ impl OClockClient {
                 ExportedState,
             >(oclock::dto::command::OClockClientCommand::JsonSwitchTask { task_id })?;
         Ok(result)
+    }
+
+    pub fn spawn_listener(
+        &self,
+    ) -> anyhow::Result<futures::channel::mpsc::Receiver<ExportedState>> {
+        let s = Socket::new(nng::Protocol::Sub0)?;
+        s.dial(SERVER_SUB_URL)?;
+        let all_topics = vec![];
+        s.set_opt::<Subscribe>(all_topics)?;
+
+        let (mut tx, rx) = futures::channel::mpsc::channel(100);
+        std::thread::spawn(move || {
+            while let Ok(msg) = s.recv() {
+                match serde_json::from_slice::<ExportedState>(&msg[..]) {
+                    Ok(state) => {
+                        let out = tx.try_send(state);
+                        if let Err(err) = out {
+                            log::error!("Error sending state - {err}");
+                        }
+                    }
+                    Err(err) => log::error!("Error deserializing state - {err}"),
+                }
+            }
+        });
+        Ok(rx)
     }
 }

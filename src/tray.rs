@@ -12,6 +12,10 @@ impl OClockTray {
         let state = client.get_state()?;
         Ok(Self { client, state })
     }
+
+    pub fn update_state(&mut self, state: ExportedState) {
+        self.state = state;
+    }
 }
 
 impl ksni::Tray for OClockTray {

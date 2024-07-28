@@ -1,14 +1,18 @@
 use client::oclock::client::OClockClient;
+use futures::StreamExt;
 use ksni;
 use tray::OClockTray;
 
 mod client;
 pub mod tray;
 
-fn main() {
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
     env_logger::init();
 
     let client = OClockClient::new();
+
+    let mut rx = client.spawn_listener().expect("Error spaning listener");
 
     let service =
         ksni::TrayService::new(OClockTray::new(client).expect("Failed to create tray service"));
@@ -16,12 +20,12 @@ fn main() {
     let handle = service.handle();
     service.spawn();
 
-    std::thread::sleep(std::time::Duration::from_secs(5));
-    // We can modify the tray
-    //handle.update(|tray: &mut MyTray| {
-    //    tray.checked = true;
-    //});
-    // Run forever
+    while let Some(state) = rx.next().await {
+        handle.update(|tray: &mut OClockTray| {
+            tray.update_state(state);
+        })
+    }
+
     loop {
         std::thread::park();
     }
