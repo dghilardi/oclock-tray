@@ -71,6 +71,7 @@ impl ksni::Tray for OClockTray {
                     .state
                     .all_tasks
                     .iter()
+                    .filter(|t| t.enabled > 0)
                     .position(|task| {
                         self.state
                             .current_task
@@ -80,7 +81,13 @@ impl ksni::Tray for OClockTray {
                     })
                     .unwrap_or(self.state.all_tasks.len()),
                 select: Box::new(|this: &mut Self, current| {
-                    let selected_task = this.state.all_tasks.get(current);
+                    let selected_task = this
+                        .state
+                        .all_tasks
+                        .iter()
+                        .filter(|t| t.enabled > 0)
+                        .skip(current)
+                        .next();
                     if let Some(task) = selected_task {
                         match this.client.switch_task(task.id as u64) {
                             Ok(new_state) => {
@@ -98,6 +105,7 @@ impl ksni::Tray for OClockTray {
                     .state
                     .all_tasks
                     .iter()
+                    .filter(|t| t.enabled > 0)
                     .map(|task| RadioItem {
                         label: task.name.clone(),
                         ..Default::default()

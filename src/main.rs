@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use client::oclock::client::OClockClient;
+use client::oclock::{client::OClockClient, dto::state::Task};
 use futures::{executor::block_on, StreamExt};
 use idle::{idle_evt_stream, IdleEvent};
 use ksni;
@@ -31,8 +31,18 @@ async fn main() {
                         let current_state =
                             client.get_state().expect("Error reading current state");
 
-                        let task_labels = current_state
+                        let enabled_tasks = current_state
                             .all_tasks
+                            .iter()
+                            .filter(|t| t.enabled > 0)
+                            .map(|t| Task {
+                                id: t.id,
+                                enabled: t.enabled,
+                                name: t.name.clone(),
+                            })
+                            .collect::<Vec<_>>();
+
+                        let task_labels = enabled_tasks
                             .iter()
                             .map(|t| slint::SharedString::from(&t.name))
                             .collect::<Vec<_>>();
@@ -43,8 +53,7 @@ async fn main() {
                         dialog.on_retro_switch_task(move |task_id, _timestamp, restore_prev| {
                             if task_id < 0 {
                                 log::warn!("No task selected");
-                            } else if let Some(task) = current_state.all_tasks.get(task_id as usize)
-                            {
+                            } else if let Some(task) = enabled_tasks.get(task_id as usize) {
                                 match client.retro_switch_task(
                                     task.id as u64,
                                     idle_start,
