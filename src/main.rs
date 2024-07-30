@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use chrono::Local;
 use client::oclock::{client::OClockClient, dto::state::Task};
 use futures::{executor::block_on, StreamExt};
 use idle::{idle_evt_stream, IdleEvent};
@@ -50,6 +51,11 @@ async fn main() {
                         let weak_dialog = dialog.as_weak();
                         let client = client.clone();
                         dialog.set_available_tasks(VecModel::from_slice(&task_labels));
+                        dialog.set_ts_start(slint::SharedString::from(
+                            &chrono::DateTime::<Local>::from(idle_start)
+                                .format("%T")
+                                .to_string(),
+                        ));
                         dialog.on_retro_switch_task(move |task_id, _timestamp, restore_prev| {
                             if task_id < 0 {
                                 log::warn!("No task selected");
